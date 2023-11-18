@@ -14,7 +14,7 @@ class Crawler:
         self.connection_errors = 0
         self.latest_hunt = 0
         self.sleep_time = 2
-        self.slug_name = ""
+        self.slug_name = 1
 
     def getToken(self) -> any:
         try:
@@ -49,7 +49,7 @@ class Crawler:
             connect.close()
             if data_json['status'] == 200:
                 print(f"Hunt #{nr} - Successfully got 200")
-                self.slug_name = data_json['response']['stats']['bonushunt_slug']
+                self.slug_name = int(data_json['response']['stats']['bonushunt_slug'])
                 return(data)
             else:
                 print(f"Hunt #{nr} - Error status: {data_json['status']}")
@@ -76,21 +76,23 @@ class Crawler:
 
 
     def download(self) -> any:
+        """ Download and write json files """
         latest = int(self.latest_hunt) + 1
+
         for i in range(1, latest):
-            data = self.connect(i)
-            if data is False:
-                pass
+            filename = f"bonushunt_{self.slug_name}.json"
+            file_path = os.path.join("./datafiles/", filename)
+
+            if os.path.exists(file_path):
+                print(f"   :: Skipping {filename} as it already exists")
+                self.slug_name += 1 # try next by increase slug_name with 1 (will be overwritten by connect())
+                continue
             else:
-                filename = f"bonushunt_{self.slug_name}.json"
-                file_path = os.path.join("./datafiles/", filename)
-
-                # Check if file already exists
-                if os.path.exists(file_path):
-                    print(f"   :: Skipping {filename} as it already exists")
-                    continue
-
-                with open(file_path, "wb") as f:
-                    f.write(data)
-                print(f"   :: Wrote {filename}")
-                time.sleep(self.sleep_time)
+                data = self.connect(i)
+                if data is False:
+                    pass
+                else:
+                    with open(file_path, "wb") as f:
+                        f.write(data)
+                    print(f"   :: Wrote {filename}")
+                    time.sleep(self.sleep_time)
