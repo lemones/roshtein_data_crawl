@@ -1,5 +1,5 @@
 # Downloaded json files
-datafiles/*
+datafiles/*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
