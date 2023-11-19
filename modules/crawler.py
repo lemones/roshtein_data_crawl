@@ -12,8 +12,9 @@ class Crawler:
         self.bearer = ""
         self.crawl_url = "/api/v1/entertainment/bonushunts/all/"
         self.connection_errors = 0
+        self.connection_errors_stop = 5 # Exit the script if connection_errors > this
         self.latest_hunt = 0
-        self.sleep_time = 2
+        self.sleep_time = 2 # Sleep to prevent spamming
         self.slug_name = 1
 
     def getToken(self) -> any:
@@ -33,7 +34,7 @@ class Crawler:
         """ Create connection to the API """
 
         # Cancel connection and exit program if too many errors
-        if self.connection_errors > 5:
+        if self.connection_errors > self.connection_errors_stop:
             print("To many connection errors or json status not-200 codes.")
             exit()
         try:
@@ -60,37 +61,34 @@ class Crawler:
             print(f"Hunt #{nr} - Error exception: {e}")
             return False
 
-
     def getLatestHunt(self) -> int:
         """ Get the latest hunt that have status Ended """
         data = self.connect(1)
         json_data = json.loads(data)
         latest = 0
-        latest_check = resp = json_data['response']['latest']
+        latest_check = json_data['response']['latest']
         if latest_check[0]['bonushunt_status'] == 'Ended':
             latest = latest_check[0]['slug']
         else:
+            # If [0] is not "Ended", next one will be
             latest = latest_check[1]['slug']
         self.latest_hunt = latest
         return self.latest_hunt
 
-
     def download(self) -> any:
         """ Download and write json files """
         latest = int(self.latest_hunt) + 1
-
         for i in range(1, latest):
             filename = f"bonushunt_{self.slug_name}.json"
             file_path = os.path.join("./datafiles/", filename)
-
             if os.path.exists(file_path):
                 print(f"   :: Skipping {filename} as it already exists")
-                self.slug_name += 1 # try next by increase slug_name with 1 (will be overwritten by connect())
+                self.slug_name += 1 # try next by increase slug_name with 1 (will be overwritten by connect() when accepted)
                 continue
             else:
                 data = self.connect(i)
                 if data is False:
-                    pass
+                    print(f"   :: No data for {filename}")
                 else:
                     with open(file_path, "wb") as f:
                         f.write(data)
