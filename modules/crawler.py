@@ -67,7 +67,7 @@ class Crawler:
         json_data = json.loads(data)
         latest = 0
         latest_check = json_data['response']['latest']
-        if latest_check[0]['bonushunt_status'] == 'Ended':
+        if latest_check[0]['status'] == 'Ended':
             latest = latest_check[0]['slug']
         else:
             # If [0] is not "Ended", next one will be
