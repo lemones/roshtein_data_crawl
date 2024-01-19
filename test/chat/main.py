@@ -9,6 +9,9 @@ from dateutil import parser
 ###
 # chatcheck - Save chats to check for identical messages for rafflecheck
 #   Need to replace, not append. Also need a better solution
+##
+# [emote:2036252:roshteingoldsatchel]
+#   https://files.kick.com/emotes/2036252/fullsize
 
 class Start():
 
@@ -17,6 +20,7 @@ class Start():
         self.headers = {
             "User-Agent": self.useragent
         }
+        logFile = "log.txt"
         self.chatids = []
         self.chatcheck = []
 
@@ -24,7 +28,7 @@ class Start():
         """ Main function for chat API """
         try:
             connect = http.client.HTTPSConnection("kick.com")
-            connect.request("GET", "/api/v2/channels/4531/messages", None, self.headers)
+            connect.request("GET", "/api/v2/channels/4599/messages", None, self.headers)
             result = connect.getresponse()
             data = result.read()
             connect.close()
@@ -76,6 +80,7 @@ class Start():
             return(parsed_time.strftime("%d-%b %H:%M:%S"))
         
     def check_raffle(self):
+        """ !!! Probably not be allowed. Discontinued """
         """ Check for dublicated messages and report for possible ongoing raffle """
         for i in self.chatcheck:
             count = self.chatcheck.count(i)
@@ -84,8 +89,15 @@ class Start():
 
     def logger(self, chattime, user, message) -> any:
         """ Save chat to a log file """
-        with open("log.txt", 'a', encoding="utf-8") as f:
-            f.write(f"{self.time_convert(chattime)} {user} {message}\n")
+        with open("test/chat/log.txt", "r+", encoding="utf-8") as f:
+            lines = f.readlines()[-30:]
+            # Check for duplicated messages and dont write them
+            if any(f"{user} {message}" in line for line in lines):
+                pass
+            else:
+                # Move the file pointer to the end for writing
+                f.seek(0, 2)
+                f.write(f"{self.time_convert(chattime)} {user} {message}\n")
 
 Run = Start()
 Run.loopMe()
