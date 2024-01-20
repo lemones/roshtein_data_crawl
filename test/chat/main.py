@@ -3,6 +3,34 @@ import json
 import time
 from dateutil import parser
 
+""" Test file for gather chat messages
+    Using kick API is not ideal
+    sleep 5 sec before gather 25 messages(think api limits to 25 last?)
+    problem if there is 30 messages within the 5 seconds.
+    limit in connections does not allow me to connect more than every 3 sec
+    (sleep 5 might be to much, almost every second write is a 0 because of dublicates)
+"""
+
+"""
+badges
+    type: subscriber, moderator
+
+"type": "message"
+
+"type": "reply"
+    content (chatmessage)
+    metadata
+        original_message
+            id
+            content (chatmessage)
+            created_at
+            sender
+                username
+                slug
+                badges
+            
+"""
+
 # 4531 - frankdimes
 # 4599 - roshtein
 
@@ -16,13 +44,20 @@ from dateutil import parser
 class Start():
 
     def __init__(self) -> any:
+        # Does not allow python headers. Trick it to something else
         self.useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36'
         self.headers = {
             "User-Agent": self.useragent
         }
-        logFile = "log.txt"
+        # change to os script dir/{logFile}
+        self.logFile = "log.txt"
+
         self.chatids = []
-        self.chatcheck = []
+        self.userCheck = ['muttuuuu', 'roshtein']
+
+        # For science
+        self.dublicated = 0
+        self.entriesWritten = 0
 
     def connect(self) -> any:
         """ Main function for chat API """
@@ -42,20 +77,40 @@ class Start():
                     chat_msg = all['content']
                     chat_time = all['created_at']
 
-                    if chat_id in self.chatids:
-                        pass
-                    else:
-                        print(f"{self.time_convert(chat_time)} \033[31m{chat_usr}\033[0m - {chat_msg}")
-                        self.logger(chat_time, chat_usr, chat_msg)
-                        self.chatids.append(chat_id)
-                        #self.chatcheck.append(chat_msg)
+                    chat_color = "\033[31m"
+
+                    """ Check if user has badge """
+                    chat_userBadge = all['sender']['identity']['badges']
+                    chat_writeBadge = ""
+                    badge_mapping = {"moderator": ("\033[33m", "M"), "vip": ("\033[34m", "V"), "og": ("\033[35m", "G")}
+
+                    if chat_userBadge:
+                        # Set color depending on first badge
+                        first_badge_type = chat_userBadge[0]['type']
+                        chat_color = badge_mapping.get(first_badge_type, ("", ""))[0]
+                        chat_writeBadge = ''.join(badge_mapping.get(badge['type'], ("", ""))[1] for badge in chat_userBadge)
+
+                    # If writeBadge, put inside []
+                    if chat_writeBadge:
+                        chat_writeBadge = f"[{chat_writeBadge}]"
+
+                    #print(f"{self.time_convert(chat_time)} {chat_writeBadge} {chat_color}{chat_usr}\033[0m - {chat_msg}")
+                    # print only __init__ science
+                    self.logger(chat_time, chat_usr, chat_msg)
+
+                    # Should log chat_id and pass if it's dublicated
+                    self.chatids.append(chat_id)
+                    #self.chatcheck.append(chat_msg)
             else:
                 print("No success")
+                # No need to exit, we have Except to try again
                 exit()
 
         except Exception as e:
-            print("-------Died------")
-            print(e)
+            # We will raise ValueError when cloudflare protect kicks in
+            # because of connections. Just pass an retry.
+            #print(e)
+            pass
 
     def loopMe(self) -> any:
         """ The start script. Loop trough functions with sleep time """
@@ -63,6 +118,10 @@ class Start():
             self.connect()
             self.clean_list()
             #self.check_raffle()
+            print(f"Wrote: {self.entriesWritten}\tDublicated: {self.dublicated}")
+            # zero everything out
+            self.entriesWritten = 0
+            self.dublicated = 0
             time.sleep(5)
 
     def clean_list(self) -> any:
@@ -79,22 +138,15 @@ class Start():
             parsed_time = parser.parse(time_str)
             return(parsed_time.strftime("%d-%b %H:%M:%S"))
         
-    def check_raffle(self):
-        """ !!! Probably not be allowed. Discontinued """
-        """ Check for dublicated messages and report for possible ongoing raffle """
-        for i in self.chatcheck:
-            count = self.chatcheck.count(i)
-            if count > 10:
-                print("Possible raffle!")
-
     def logger(self, chattime, user, message) -> any:
         """ Save chat to a log file """
         with open("test/chat/log.txt", "r+", encoding="utf-8") as f:
             lines = f.readlines()[-30:]
             # Check for duplicated messages and dont write them
             if any(f"{user} {message}" in line for line in lines):
-                pass
+                self.dublicated += 1
             else:
+                self.entriesWritten += 1
                 # Move the file pointer to the end for writing
                 f.seek(0, 2)
                 f.write(f"{self.time_convert(chattime)} {user} {message}\n")
