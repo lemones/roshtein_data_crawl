@@ -92,9 +92,9 @@ class Start():
 
                     # If writeBadge, put inside []
                     if chat_writeBadge:
-                        chat_writeBadge = f"[{chat_writeBadge}]"
+                        chat_writeBadge = f"[{chat_color}{chat_writeBadge}\033[0m] "
 
-                    #print(f"{self.time_convert(chat_time)} {chat_writeBadge} {chat_color}{chat_usr}\033[0m - {chat_msg}")
+                    print(f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}")
                     # print only __init__ science
                     self.logger(chat_time, chat_usr, chat_msg)
 
