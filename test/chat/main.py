@@ -1,6 +1,7 @@
 import http.client
 import json
 import time
+import sys
 from dateutil import parser
 
 """ Test file for gather chat messages
@@ -115,7 +116,7 @@ class Start():
             else:
                 print("No success")
                 # No need to exit, we have Except to try again
-                exit()
+                sys.exit(0)
 
         except Exception as e:
             # We will raise ValueError when cloudflare protect kicks in

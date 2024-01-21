@@ -3,6 +3,7 @@ import http.client
 import os
 import json
 import time
+import sys
 
 
 class Crawler:
@@ -26,9 +27,10 @@ class Crawler:
             data_json = json.loads(data.decode("utf-8"))
             token = data_json['access_token']
             self.bearer = f"Bearer {token}"
+            connect.close()
         except Exception as e:
             print(f"crawler - getTokene :: {e}")
-            exit() # We need the token to continue
+            sys.exit(0) # We need the token to continue
 
     def connect(self, nr: int) -> any:
         """ Create connection to the API """
@@ -36,7 +38,7 @@ class Crawler:
         # Cancel connection and exit program if too many errors
         if self.connection_errors > self.connection_errors_stop:
             print("To many connection errors or json status not-200 codes.")
-            exit()
+            sys.exit(0)
         try:
             connect = http.client.HTTPSConnection("roshtein.com")
             payload = ""
