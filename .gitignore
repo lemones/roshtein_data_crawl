@@ -1,5 +1,6 @@
 # test/chat/log.txt
 test/chat/log.txt
+test/chat/log.json
 
 # Downloaded json files
 *.json
