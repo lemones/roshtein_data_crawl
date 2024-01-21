@@ -66,52 +66,53 @@ class Start():
             result = connect.getresponse()
             data = result.read()
             connect.close()
-            data_json = json.loads(data.decode("utf-8"))
+            dataDecJSON = json.loads(data.decode("utf-8"))
 
-            if data_json['status']['code'] == 200:
-                data_msg = data_json['data']['messages']
+            if dataDecJSON['status']['code'] == 200:
+                dataJSON = dataDecJSON['data']['messages']
 
-                for all in data_msg:
-                    chat_id = all['id']
-                    chat_usr = all['sender']['slug']
-                    chat_msg = all['content']
-                    chat_time = all['created_at']
-                    chat_color = "\033[31m"
+                for resJSON in dataJSON:
+                    chatId = resJSON['id']
+                    chatUser = resJSON['sender']['slug']
+                    chatMessage = resJSON['content']
+                    chatTime = resJSON['created_at']
+                    chatColor = "\033[31m"
 
                     """ Check if user has badge """
-                    chat_userBadge = all['sender']['identity']['badges']
+                    chat_userBadge = resJSON['sender']['identity']['badges']
                     chat_writeBadge = ""
-                    badge_mapping = {"moderator": ("\033[33m", "M"), "vip": ("\033[34m", "V"), "og": ("\033[35m", "G")}
+                    badge_mapping = {"moderator": ("\033[33m", "M"), "vip": ("\033[34m", "V"), "og": ("\033[35m", "G"), "subscriber": ("\033[36m", "S"), "founder": ("\033[32m", "F")}
 
                     if chat_userBadge:
                         # Set color depending on first badge
                         first_badge_type = chat_userBadge[0]['type']
-                        chat_color = badge_mapping.get(first_badge_type, ("", ""))[0]
+                        chatColor = badge_mapping.get(first_badge_type, ("", ""))[0]
                         chat_writeBadge = ''.join(badge_mapping.get(badge['type'], ("", ""))[1] for badge in chat_userBadge)
 
                     # If writeBadge, put inside []
                     if chat_writeBadge:
-                        chat_writeBadge = f"[{chat_color}{chat_writeBadge}\033[0m] "
+                        chat_writeBadge = f"[{chatColor}{chat_writeBadge}\033[0m] "
 
                     # Set the chatMessage
-                    chatMessage = f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}"
+                    chatMessage = f"{self.time_convert(chatTime)} {chat_writeBadge}{chatColor}{chatUser}\033[0m - {chatMessage}"
 
                     # Change chatMessage if it is a reply
-                    if all['type'] == "reply":
-                        replyJSON = json.loads(all["metadata"])
+                    if resJSON['type'] == "reply":
+                        replyJSON = json.loads(resJSON["metadata"])
                         replyUser = replyJSON["original_sender"]["slug"]
                         replyMessage = replyJSON["original_message"]["content"]
                         chatReplyMessage = f"{replyUser} - {replyMessage}"
-                        chatAnswerMessage = f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}"
+                        chatAnswerMessage = f"{self.time_convert(chatTime)} {chat_writeBadge}{chatColor}{chatUser}\033[0m - {chatMessage}"
                         chatMessage = f"   > {chatReplyMessage}\n{chatAnswerMessage}"
+                        #chatMessage = f"   > {chatReplyMessage}\n{chatMessage}"
 
                     # print chat
                     print(chatMessage)
                     # Log to file
-                    self.logger(chat_time, chat_usr, chat_msg)
+                    self.logger(chatTime, chatUser, chatMessage)
 
-                    # Should log chat_id and pass if it's dublicated
-                    self.chatids.append(chat_id)
+                    # Should log chatId and pass if it's dublicated
+                    self.chatids.append(chatId)
 
             else:
                 print("No success")
@@ -142,20 +143,19 @@ class Start():
         if len(self.chatids) > 40:
             self.chatids = self.chatids[30:]
 
-    def time_convert(self, what) -> any:
+    def time_convert(self, what) -> str:
         """ Convert to more human readable time """
-        time_str = what
-        if time_str is None:
+        if what is None:
             pass
         else:
-            parsed_time = parser.parse(time_str)
+            parsed_time = parser.parse(what)
             return(parsed_time.strftime("%d-%b %H:%M:%S"))
         
-    def logger(self, chattime, user, message) -> any:
+    def logger(self, chattime, user, message) -> str:
         """ Save chat to a log file """
         with open("test/chat/log.txt", "r+", encoding="utf-8") as f:
             lines = f.readlines()[-30:]
-            # Check for duplicated messages and dont write them
+            # Check for duplicated messages and ignore
             if any(f"{user} {message}" in line for line in lines):
                 self.dublicated += 1
             else:
