@@ -35,9 +35,7 @@ badges
 # 4599 - roshtein
 
 ###
-# chatcheck - Save chats to check for identical messages for rafflecheck
-#   Need to replace, not append. Also need a better solution
-##
+# Save for emote feuture
 # [emote:2036252:roshteingoldsatchel]
 #   https://files.kick.com/emotes/2036252/fullsize
 
@@ -71,12 +69,12 @@ class Start():
 
             if data_json['status']['code'] == 200:
                 data_msg = data_json['data']['messages']
+
                 for all in data_msg:
                     chat_id = all['id']
                     chat_usr = all['sender']['slug']
                     chat_msg = all['content']
                     chat_time = all['created_at']
-
                     chat_color = "\033[31m"
 
                     """ Check if user has badge """
@@ -94,13 +92,26 @@ class Start():
                     if chat_writeBadge:
                         chat_writeBadge = f"[{chat_color}{chat_writeBadge}\033[0m] "
 
-                    print(f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}")
-                    # print only __init__ science
+                    # Set the chatMessage
+                    chatMessage = f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}"
+
+                    # Change chatMessage if it is a reply
+                    if all['type'] == "reply":
+                        replyJSON = json.loads(all["metadata"])
+                        replyUser = replyJSON["original_sender"]["slug"]
+                        replyMessage = replyJSON["original_message"]["content"]
+                        chatReplyMessage = f"{replyUser} - {replyMessage}"
+                        chatAnswerMessage = f"{self.time_convert(chat_time)} {chat_writeBadge}{chat_color}{chat_usr}\033[0m - {chat_msg}"
+                        chatMessage = f"   > {chatReplyMessage}\n{chatAnswerMessage}"
+
+                    # print chat
+                    print(chatMessage)
+                    # Log to file
                     self.logger(chat_time, chat_usr, chat_msg)
 
                     # Should log chat_id and pass if it's dublicated
                     self.chatids.append(chat_id)
-                    #self.chatcheck.append(chat_msg)
+
             else:
                 print("No success")
                 # No need to exit, we have Except to try again
@@ -117,7 +128,8 @@ class Start():
         while True:
             self.connect()
             self.clean_list()
-            #self.check_raffle()
+            
+            # Print science
             print(f"Wrote: {self.entriesWritten}\tDublicated: {self.dublicated}")
             # zero everything out
             self.entriesWritten = 0
