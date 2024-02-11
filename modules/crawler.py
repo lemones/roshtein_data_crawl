@@ -21,7 +21,8 @@ class Crawler:
     def getToken(self) -> any:
         try:
             connect = http.client.HTTPSConnection("roshtein.com")
-            connect.request("GET", "/api/v1/authentication")
+            headers = { 'User-Agent': self.useragent }
+            connect.request("GET", "/api/v1/authentication", headers=headers)
             response = connect.getresponse()
             data = response.read()
             data_json = json.loads(data.decode("utf-8"))
@@ -29,7 +30,7 @@ class Crawler:
             self.bearer = f"Bearer {token}"
             connect.close()
         except Exception as e:
-            print(f"crawler - getTokene :: {e}")
+            print(f"crawler - getToken :: {e}")
             sys.exit(0) # We need the token to continue
 
     def connect(self, nr: int) -> any:
@@ -43,6 +44,7 @@ class Crawler:
             connect = http.client.HTTPSConnection("roshtein.com")
             payload = ""
             headers = {
+                "User-Agent": self.useragent,
                 "Authorization": self.bearer
                 }
             connect.request("GET", f"{self.crawl_url}{nr}", payload, headers)
@@ -52,7 +54,7 @@ class Crawler:
             connect.close()
             if data_json['status'] == 200:
                 print(f"Hunt #{nr} - Successfully got 200")
-                self.slug_name = int(data_json['response']['stats']['bonushunt_slug'])
+                self.slug_name = int(data_json['response']['stats']['bonushunt_slug']) # Why not use {nr} as slug_name?
                 return(data)
             else:
                 print(f"Hunt #{nr} - Error status: {data_json['status']}")
